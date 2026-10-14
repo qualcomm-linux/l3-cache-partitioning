@@ -11,7 +11,7 @@ should be made against `main`.
 ## Submitting a Pull Request
 
 1. Please read our [code of conduct](CODE-OF-CONDUCT.md) and [license](LICENSE.txt).
-2. [Fork](https://github.com/qualcomm-linux/l3-cache-partitioning/fork) and clone the repository.
+2. [Fork](https://github.com/ruchira-revdekar/l3-cache-partitioning/fork) and clone the repository.
 
     ```bash
     git clone https://github.com/<username>/l3-cache-partitioning.git
@@ -42,7 +42,7 @@ should be made against `main`.
     git pull --rebase upstream main
     ```
 
-7. Push and [open a pull request](https://github.com/qualcomm-linux/l3-cache-partitioning/pulls).
+7. Push and [open a pull request](https://github.com/ruchira-revdekar/l3-cache-partitioning/pulls).
 
 ## Coding Style
 

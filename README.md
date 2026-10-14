@@ -64,6 +64,10 @@ echo "ff 1" > /sys/kernel/config/cache_partition/partcr_el1
 echo "1 7" > /sys/kernel/config/cache_partition/thread_sid_el1
 ```
 
+See [Documentation/integration-guide.md](Documentation/integration-guide.md) for
+the full integration guide covering Yocto, standalone cross-compilation, and
+native build workflows.
+
 See [Documentation/configuration.md](Documentation/configuration.md) for full
 interface documentation and [Documentation/testing.md](Documentation/testing.md)
 for validation instructions.
