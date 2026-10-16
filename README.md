@@ -23,20 +23,54 @@ attributes for reading and writing these registers.
 | QCS8300 | Supported |
 | QCS9100 | Supported |
 
-See [Documentation/supported-kernels.md](Documentation/supported-kernels.md) for
-kernel version compatibility.
-
 ## Build Requirements
 
 - Linux kernel headers ≥ 6.6 (arm64)
 - `CONFIG_CONFIGFS_FS=y` in the target kernel
 - GCC or Clang cross-compiler for arm64
 
-## Quick Start
+## Yocto Integration
+
+### Option A — via `meta-qcom-realtime` (recommended for RT builds)
+
+The recipe is maintained in the
+[qualcomm-linux/meta-qcom-realtime](https://github.com/qualcomm-linux/meta-qcom-realtime)
+layer. If your build already includes that layer, add the module to your image:
+
+```bitbake
+# In your image recipe or bbappend
+IMAGE_INSTALL:append = " qcom-cache-partition"
+```
+
+Also ensure the kernel config fragment enables ConfigFS:
+
+```
+CONFIG_CONFIGFS_FS=y
+```
+
+The module will load automatically at boot via `systemd-modules-load.service`.
+
+### Option B — standalone layer
+
+This repository is itself a valid Yocto layer. Add it to `bblayers.conf`:
+
+```
+BBLAYERS += "/path/to/l3-cache-partitioning"
+```
+
+Then add to your image:
+
+```bitbake
+IMAGE_INSTALL:append = " qcom-cache-partition"
+```
+
+The layer depends on `core` and `qcom` (from `meta-qcom`).
+
+## Quick Start (native / cross build)
 
 ```sh
-# Set KDIR to your kernel build directory or installed headers
-make KDIR=/lib/modules/$(uname -r)/build
+# Cross-compile
+make KDIR=/path/to/kernel ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu-
 
 # Install
 sudo make KDIR=/lib/modules/$(uname -r)/build modules_install
@@ -54,8 +88,6 @@ mount -t configfs none /sys/kernel/config
 ```sh
 # Read current state
 cat /sys/kernel/config/cache_partition/partcr_el1
-# Cluster 0: 0x0
-# Cluster 1: 0x0
 
 # Assign ways 0xFF to cluster 1 (RT cluster)
 echo "ff 1" > /sys/kernel/config/cache_partition/partcr_el1
@@ -63,14 +95,6 @@ echo "ff 1" > /sys/kernel/config/cache_partition/partcr_el1
 # Assign stream ID 1 to CPU 7
 echo "1 7" > /sys/kernel/config/cache_partition/thread_sid_el1
 ```
-
-See [Documentation/integration-guide.md](Documentation/integration-guide.md) for
-the full integration guide covering Yocto, standalone cross-compilation, and
-native build workflows.
-
-See [Documentation/configuration.md](Documentation/configuration.md) for full
-interface documentation and [Documentation/testing.md](Documentation/testing.md)
-for validation instructions.
 
 ## Contributing
 
