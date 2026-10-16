@@ -31,9 +31,7 @@ attributes for reading and writing these registers.
 
 ## Yocto Integration
 
-### Option A — via `meta-qcom-realtime` (recommended for RT builds)
-
-The recipe is maintained in the
+The Yocto recipe is maintained in the
 [qualcomm-linux/meta-qcom-realtime](https://github.com/qualcomm-linux/meta-qcom-realtime)
 layer. If your build already includes that layer, add the module to your image:
 
@@ -49,22 +47,6 @@ CONFIG_CONFIGFS_FS=y
 ```
 
 The module will load automatically at boot via `systemd-modules-load.service`.
-
-### Option B — standalone layer
-
-This repository is itself a valid Yocto layer. Add it to `bblayers.conf`:
-
-```
-BBLAYERS += "/path/to/l3-cache-partitioning"
-```
-
-Then add to your image:
-
-```bitbake
-IMAGE_INSTALL:append = " qcom-cache-partition"
-```
-
-The layer depends on `core` and `qcom` (from `meta-qcom`).
 
 ## Quick Start (native / cross build)
 
