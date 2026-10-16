@@ -31,22 +31,76 @@ attributes for reading and writing these registers.
 
 ## Yocto Integration
 
-The Yocto recipe is maintained in the
-[qualcomm-linux/meta-qcom-realtime](https://github.com/qualcomm-linux/meta-qcom-realtime)
-layer. If your build already includes that layer, add the module to your image:
+The Yocto recipe lives in
+[qualcomm-linux/meta-qcom-realtime](https://github.com/qualcomm-linux/meta-qcom-realtime),
+which targets the **scarthgap** Yocto release.
 
-```bitbake
-# In your image recipe or bbappend
-IMAGE_INSTALL:append = " qcom-cache-partition"
+> **Note:** `meta-qcom-realtime` does more than provide this module — it also
+> sets RT kernel providers, kernel command-line parameters, and appends several
+> RT packages to the image. If you only want the cache partition module without
+> those changes, follow the standalone recipe path below.
+
+### Using meta-qcom-realtime (scarthgap builds)
+
+**Step 1 — Add the layer to `bblayers.conf`:**
+
+```
+BBLAYERS += "/path/to/meta-qcom-realtime"
 ```
 
-Also ensure the kernel config fragment enables ConfigFS:
+**Step 2 — Enable ConfigFS in your kernel config fragment.**
+
+Create a `.cfg` file in your layer (e.g. `recipes-kernel/linux/files/qcom-cache-partition.cfg`):
 
 ```
 CONFIG_CONFIGFS_FS=y
 ```
 
-The module will load automatically at boot via `systemd-modules-load.service`.
+Then append it to your kernel recipe via a bbappend
+(`recipes-kernel/linux/linux-qcom-rt_%.bbappend`):
+
+```bitbake
+FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
+SRC_URI:append = " file://qcom-cache-partition.cfg"
+```
+
+**Step 3 — Add the module to your image recipe or bbappend:**
+
+```bitbake
+IMAGE_INSTALL:append = " qcom-cache-partition"
+```
+
+The module loads automatically at boot via `systemd-modules-load.service`.
+
+### Standalone recipe (other Yocto releases)
+
+If you are not on scarthgap or do not want to pull in the full
+`meta-qcom-realtime` layer, copy the recipe directly into your own layer.
+
+Create `recipes-kernel/qcom-cache-partition/qcom-cache-partition_1.0.bb`:
+
+```bitbake
+# SPDX-License-Identifier: GPL-2.0-only
+DESCRIPTION = "Qualcomm L3 Cache Partitioning OOT kernel module (FR203643)"
+HOMEPAGE = "https://github.com/rrevdeka/l3-cache-partitioning"
+LICENSE = "GPL-2.0-only"
+LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=a362c03f8df4e23f8a155e1cb2c45b2a"
+
+SRC_URI = "git://github.com/rrevdeka/l3-cache-partitioning.git;protocol=https;branch=main"
+SRCREV = "b2041aa0361c1cb848ebbc43555cf63e674b283d"
+
+inherit module
+
+KERNEL_MODULE_AUTOLOAD += "qcom-cache-partition"
+RPROVIDES:${PN} += "kernel-module-qcom-cache-partition"
+
+COMPATIBLE_MACHINE = "^$"
+COMPATIBLE_MACHINE:aarch64 = "(.*)"
+
+PACKAGE_ARCH = "${MACHINE_ARCH}"
+```
+
+Then follow Steps 2 and 3 above (kernel config fragment + `IMAGE_INSTALL`).
 
 ## Quick Start (native / cross build)
 
