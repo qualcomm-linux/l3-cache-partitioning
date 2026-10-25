@@ -26,4 +26,4 @@ External contributors may submit pull requests following [CONTRIBUTING.md](CONTR
 
 ## Supported Kernel Versions
 
-See [Documentation/supported-kernels.md](Documentation/supported-kernels.md).
+Linux kernel ≥ 6.6 (arm64). See [README.md](README.md) for details.
