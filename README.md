@@ -16,6 +16,10 @@ directly from Linux kernel space — no TrustZone or SMC calls required:
 A ConfigFS subsystem at `/sys/kernel/config/cache_partition/` exposes two
 attributes for reading and writing these registers.
 
+Both registers are reset by hardware on cluster power-gate. The module registers
+a `cpu_pm` notifier that automatically restores both registers on `CPU_PM_EXIT`,
+so partition assignments survive CPU idle transitions.
+
 ## Supported Platforms
 
 | SoC | Status |
@@ -25,7 +29,7 @@ attributes for reading and writing these registers.
 
 ## Prerequisites
 
-Three conditions must be met for the module to function correctly.
+Two conditions must be met for the module to function correctly.
 
 ### 1. `CONFIG_CONFIGFS_FS=y`
 
@@ -56,56 +60,25 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files:"
 SRC_URI:append = " file://qcom-cache-partition.cfg"
 ```
 
-### 2. `cpuidle.off=1`
+### 2. EL2 / VHE host (bare-metal KVM)
 
-`CLUSTERPARTCR_EL1` is a cluster-level register that is re-initialized by the
-hardware on cluster power-down. If the CPU idle driver is allowed to power-gate
-the cluster, register values written by the module are silently lost on the next
-idle exit — cache partitioning appears to work but has no effect after the first
-idle transition.
+`CLUSTERPARTCR_EL1` and `CLUSTER_THREAD_SID_EL1` are trapped by both the
+Gunyah hypervisor and by the KVM EL2 host when accessed from a VM guest. The
+module must run on bare-metal Linux at EL2 in VHE mode (i.e. as the KVM host,
+not as a guest).
 
-**How to satisfy (choose one):**
+**Standard QCS8300 / QCS9100 builds satisfy this automatically**: the
+`xbl_config.elf` shipped by `qcomflash` is the KVM variant, which initializes
+the CPU in VHE mode with Linux running at EL2.
 
-- **Yocto — `meta-qcom-realtime` (public, scarthgap):** The layer's
-  `conf/layer.conf` sets `cpuidle.off=1` in `KERNEL_CMDLINE_EXTRA` for
-  `qcs8300`, `qcs9100`, and `qcm6490` machines automatically.
-
-- **Yocto — manual:** Add to your machine config or `local.conf`:
-  ```bitbake
-  KERNEL_CMDLINE_EXTRA:append = " cpuidle.off=1"
-  ```
-
-- **Non-Yocto:** Add `cpuidle.off=1` to your bootloader kernel command line
-  (GRUB, EFI, or U-Boot `bootargs`).
-
-### 3. Host KVM (EL2 initialisation)
-
-`CLUSTERPARTCR_EL1` is a Qualcomm vendor register that is only accessible from
-EL1 after the CPU has been initialized at EL2. If the system boots without KVM
-host support, EL2 is not initialized, and any `mrs`/`msr` to this register will
-fault — the module will load successfully but the first write to ConfigFS will
-trigger a kernel exception.
-
-**How to satisfy:**
-
-- **Yocto — QCS8300/QCS9100 EVKs:** The `iq-9075-evk.conf` / equivalent machine
-  config in `meta-qcom` already includes the EL2 DTB variant
-  (e.g. `lemans-evk-el2.dtb`) in `KERNEL_DEVICETREE`. The bootloader selects it
-  automatically from the multi-DTB image.
-
-- **Yocto — custom board:** Add the EL2 DTB for your board to
-  `KERNEL_DEVICETREE` in your machine config:
-  ```bitbake
-  KERNEL_DEVICETREE:append = " qcom/<board>-el2.dtb"
-  ```
-  and ensure `CONFIG_KVM=y` is set in your kernel config.
-
-- **Non-Yocto:** Boot with your board's EL2 DTB selected in the bootloader.
+If you are running Linux inside a Gunyah or KVM guest VM, register accesses
+will trap and the module will not function.
 
 ## Build Requirements
 
 - Linux kernel headers ≥ 6.6 (arm64)
-- `CONFIG_CONFIGFS_FS=y` in the target kernel (see Prerequisites)
+- `CONFIG_CONFIGFS_FS=y` in the target kernel (see Prerequisites §1)
+- Linux running at EL2 as VHE host — satisfied by default on QCS8300/QCS9100 (see Prerequisites §2)
 - GCC or Clang cross-compiler for arm64
 
 ## Yocto Integration
@@ -125,8 +98,6 @@ The Yocto recipe for this module lives in
 IMAGE_INSTALL:append = " qcom-cache-partition"
 ```
 
-**Step 3 — Satisfy cpuidle and KVM prerequisites** (see Prerequisites §2 and §3).
-
 The module loads automatically at boot via `systemd-modules-load.service`.
 
 ### Standalone recipe (builds without meta-qcom)
@@ -144,11 +115,10 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=a362c03f8df4e23f8a155e1cb2c45b2a"
 
 inherit module
 
-SRC_URI = "git://github.com/rrevdeka/l3-cache-partitioning.git;protocol=https;branch=main"
+SRC_URI = "git://github.com/qualcomm-linux/l3-cache-partitioning.git;protocol=https;branch=main"
 SRCREV = "1eb5f683c15db85d92c19c96edcc7664b084f4d3"
 
 PV = "1.0+git"
-S = "${WORKDIR}/git"
 
 COMPATIBLE_MACHINE = "^$"
 COMPATIBLE_MACHINE:aarch64 = "(.*)"
@@ -158,7 +128,7 @@ RPROVIDES:${PN} += "kernel-module-qcom-cache-partition"
 PACKAGE_ARCH = "${MACHINE_ARCH}"
 ```
 
-Then follow Steps 1–3 above.
+Then follow Steps 1–2 above.
 
 ## Quick Start (native / cross build)
 
