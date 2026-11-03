@@ -116,7 +116,7 @@ LIC_FILES_CHKSUM = "file://LICENSE.txt;md5=a362c03f8df4e23f8a155e1cb2c45b2a"
 inherit module
 
 SRC_URI = "git://github.com/qualcomm-linux/l3-cache-partitioning.git;protocol=https;branch=main"
-SRCREV = "1eb5f683c15db85d92c19c96edcc7664b084f4d3"
+SRCREV = "e0bf8a21d9b6fc720fa9c866e4c9df5b676bb3d9"
 
 PV = "1.0+git"
 
