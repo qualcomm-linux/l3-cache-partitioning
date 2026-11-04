@@ -12,15 +12,11 @@ The l3-cache-partitioning project maintainers are responsible for:
 
 ## Maintainer Group
 
-Maintainer alias: `l3-cache-partitioning.maint`
-
 | Name | GitHub | Role |
 |---|---|---|
-| Qualcomm Innovation Center | @qualcomm-linux | Maintainer |
+| Qualcomm Innovation Center | @rrevdeka | Maintainer |
 
-## Contributor Group
-
-Contributor alias: `l3-cache-partitioning.triage`
+## Contributing
 
 External contributors may submit pull requests following [CONTRIBUTING.md](CONTRIBUTING.md).
 

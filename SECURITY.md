@@ -9,6 +9,15 @@ CVE number), please report it as a
 If you have a patch ready, submit it following the same procedure as any
 other patch as described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
+If you are dealing with a not-yet-released or otherwise sensitive issue,
+please contact the Qualcomm Product Security team directly:
+
+- Email: [product-security@qualcomm.com](mailto:product-security@qualcomm.com)
+- Web: [Report a Bug](https://www.qualcomm.com/company/product-security/report-a-bug)
+
+Include as many details as possible: the affected module and version, a
+description of the vulnerability, and any example code or reproduction steps.
+
 ## Coordinated Disclosure
 
 We follow a Coordinated Vulnerability Disclosure (CVD) process:

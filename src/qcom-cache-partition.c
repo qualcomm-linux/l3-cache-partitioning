@@ -26,7 +26,6 @@
 #include <linux/cpu_pm.h>
 #include <linux/slab.h>
 #include <linux/bitops.h>
-#include <linux/spinlock.h>
 #include <linux/topology.h>
 #include <linux/cpumask.h>
 #include <asm/sysreg.h>
@@ -42,8 +41,8 @@ MODULE_VERSION("1.0");
 
 /*
  * Upper bound for cluster-ID bitmap deduplication.
- * Not a hard CPU limit — topology_cluster_id() values outside [0, limit)
- * are skipped gracefully.
+ * Not a hard CPU limit — show and restore paths skip cluster IDs outside
+ * [0, limit) gracefully; store rejects them with -EINVAL.
  */
 #define MAX_CLUSTERS_HINT       8
 
@@ -59,9 +58,6 @@ enum cache_reg {
  */
 static u64 partcr_state[MAX_CLUSTERS_HINT];
 static u64 thread_sid_state[NR_CPUS];
-
-/* Serialize concurrent cluster writes so two callers don't race on the same cluster */
-static DEFINE_SPINLOCK(partcr_lock);
 
 struct reg_read_context {
 	u64            *values; /* caller-allocated, nr_cpu_ids elements, indexed by cpu */
@@ -82,6 +78,8 @@ static void cache_partition_reg_write(u64 regval, enum cache_reg reg)
 	case REG_THREAD_SID:
 		write_sysreg_s(regval, CLUSTER_THREAD_SID_EL1);
 		break;
+	default:
+		return;
 	}
 	isb();
 }
@@ -182,10 +180,10 @@ static ssize_t partcr_el1_store(struct config_item *item,
 				const char *page, size_t count)
 {
 	struct reg_write_ctx wctx = { .reg = REG_PARTCR };
-	u32 value;
+	u64 value;
 	int cluster_id, cpu, rep_cpu = -1, ret;
 
-	if (sscanf(page, "%x %d", &value, &cluster_id) != 2) {
+	if (sscanf(page, "%llx %d", &value, &cluster_id) != 2) {
 		pr_err("cache_partition: expected: <hex_value> <cluster_id>\n");
 		return -EINVAL;
 	}
@@ -216,15 +214,13 @@ static ssize_t partcr_el1_store(struct config_item *item,
 	WRITE_ONCE(partcr_state[cluster_id], value);
 	wctx.value = value;
 
-	spin_lock(&partcr_lock);
 	ret = smp_call_function_single(rep_cpu, do_reg_write, &wctx, true);
-	spin_unlock(&partcr_lock);
 
 	if (ret)
 		pr_warn("cache_partition: cluster %d CPU%d went offline; state saved, will restore on wake\n",
 			cluster_id, rep_cpu);
 	else
-		pr_info("cache_partition: CLUSTERPARTCR_EL1=0x%x cluster %d (CPU%d)\n",
+		pr_info("cache_partition: CLUSTERPARTCR_EL1=0x%llx cluster %d (CPU%d)\n",
 			value, cluster_id, rep_cpu);
 
 	return count;
@@ -262,10 +258,10 @@ static ssize_t thread_sid_el1_store(struct config_item *item,
 				    const char *page, size_t count)
 {
 	struct reg_write_ctx wctx = { .reg = REG_THREAD_SID };
-	u32 value;
+	u64 value;
 	int cpu_num, ret;
 
-	if (sscanf(page, "%x %d", &value, &cpu_num) != 2) {
+	if (sscanf(page, "%llx %d", &value, &cpu_num) != 2) {
 		pr_err("cache_partition: expected: <hex_value> <cpu_num>\n");
 		return -EINVAL;
 	}
@@ -289,7 +285,7 @@ static ssize_t thread_sid_el1_store(struct config_item *item,
 		pr_warn("cache_partition: CPU%d went offline; state saved, will restore on wake\n",
 			cpu_num);
 	else
-		pr_info("cache_partition: CLUSTER_THREAD_SID_EL1=0x%x CPU%d\n",
+		pr_info("cache_partition: CLUSTER_THREAD_SID_EL1=0x%llx CPU%d\n",
 			value, cpu_num);
 
 	return count;
