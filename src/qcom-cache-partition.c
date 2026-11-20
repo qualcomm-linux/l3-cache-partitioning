@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
- * Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  *
  * Qualcomm Cache Partition Control via ConfigFS
  *
@@ -31,7 +31,7 @@
 #include <asm/sysreg.h>
 
 MODULE_LICENSE("GPL");
-MODULE_AUTHOR("Qualcomm Innovation Center, Inc.");
+MODULE_AUTHOR("Qualcomm Technologies, Inc.");
 MODULE_DESCRIPTION("Qualcomm L3 cache partition control for RT workloads");
 MODULE_VERSION("1.0");
 

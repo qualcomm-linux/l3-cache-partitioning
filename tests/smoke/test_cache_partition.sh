@@ -1,6 +1,6 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-only
-# Copyright (c) 2024-2025, Qualcomm Innovation Center, Inc. All rights reserved.
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
 #
 # Smoke test for qcom-cache-partition module.
 # Run as root on a QCS8300 or QCS9100 target with the module loaded.

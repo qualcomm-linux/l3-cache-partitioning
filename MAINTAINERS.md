@@ -14,7 +14,7 @@ The l3-cache-partitioning project maintainers are responsible for:
 
 | Name | GitHub | Role |
 |---|---|---|
-| Qualcomm Innovation Center | @rrevdeka | Maintainer |
+| Qualcomm Technologies, Inc. | @rrevdeka | Maintainer |
 
 ## Contributing
 
